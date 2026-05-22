@@ -788,6 +788,10 @@ function resizeCanvas() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+try {
+  new ResizeObserver(() => resizeCanvas()).observe(canvas.parentElement);
+} catch {}
 
 function polarToXY(az, el, cx, cy, R) {
   const r = (1 - Math.max(0, Math.min(90, el)) / 90) * R;
@@ -1150,6 +1154,8 @@ function setObserver(o) {
   shareBtn.disabled = false;
   setStatus('SCANNING');
   state.trails.clear();
+  if (addrInput && typeof addrInput.blur === 'function') addrInput.blur();
+  requestAnimationFrame(() => { resizeCanvas(); });
   fetchPlanes().then(() => { computeSatellites(); renderList(); });
 }
 
@@ -1182,7 +1188,8 @@ function tickTle() {
 }
 
 function rafLoop(t) {
-  drawRadar(t);
+  try { drawRadar(t); }
+  catch (e) { console.error('drawRadar error:', e); }
   requestAnimationFrame(rafLoop);
 }
 
