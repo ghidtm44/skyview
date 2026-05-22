@@ -555,7 +555,6 @@ const tgtCount = document.getElementById('tgt-count');
 const satCount = document.getElementById('sat-count');
 const nextRefresh = document.getElementById('next-refresh');
 const hoverInfo = document.getElementById('hover-info');
-const obsForm = document.getElementById('obs-form');
 const addrInput = document.getElementById('addr');
 const scanBtn = document.getElementById('scan-btn');
 const geoBtn = document.getElementById('geo-btn');
@@ -564,15 +563,8 @@ const boot = document.getElementById('boot');
 const bootLines = document.getElementById('boot-lines');
 const emptyMsg = document.getElementById('empty-msg');
 
-// ===== DEBUG =====
 const params = new URLSearchParams(location.search);
-const DEBUG = params.has('debug');
 if (params.has('clear')) { try { localStorage.clear(); } catch(_){} }
-const dbg = { clicks: 0, submits: 0, unloads: 0, errors: 0, last: '' };
-function dbgUpdate(k, v) { dbg[k] = (dbg[k]||0) + 1; if (v) dbg.last = v; if (DEBUG) document.title = `SV c${dbg.clicks} s${dbg.submits} u${dbg.unloads} e${dbg.errors} ${dbg.last}`; }
-window.addEventListener('beforeunload', (e) => { dbgUpdate('unloads', 'beforeunload'); });
-window.addEventListener('error', (e) => { dbgUpdate('errors', 'err:'+(e.message||'?').slice(0,30)); });
-window.addEventListener('unhandledrejection', (e) => { dbgUpdate('errors', 'rej:'+String(e.reason).slice(0,30)); });
 
 // ===== UTIL =====
 function setStatus(text, level = 'ok') {
@@ -1105,11 +1097,10 @@ async function applyAddress(query) {
 scanBtn.addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
-  dbgUpdate('clicks', 'scan');
   applyAddress(addrInput.value.trim());
 });
 addrInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); dbgUpdate('clicks', 'enter'); applyAddress(addrInput.value.trim()); }
+  if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); applyAddress(addrInput.value.trim()); }
 });
 geoBtn.addEventListener('click', () => {
   if (!navigator.geolocation) { showToast('NO GEOLOCATION SUPPORT'); return; }
