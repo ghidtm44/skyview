@@ -494,10 +494,10 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
     </main>
 
     <footer>
-      <form class="input-row" id="obs-form" autocomplete="off">
+      <form class="input-row" id="obs-form" autocomplete="off" action="javascript:void(0);" onsubmit="return false;">
         <span class="prompt">&gt; SET OBSERVER:</span>
         <input id="addr" type="text" placeholder='ADDRESS, CITY  ─OR─  LAT, LON  (e.g. "Times Square" or "40.71, -74.00")' spellcheck="false" />
-        <button type="submit" id="scan-btn">[ SCAN ]</button>
+        <button type="button" id="scan-btn">[ SCAN ]</button>
         <button type="button" class="ghost" id="geo-btn" title="Use device location">GEO</button>
       </form>
       <div class="status">
@@ -1086,6 +1086,10 @@ async function applyAddress(query) {
 obsForm.addEventListener('submit', (e) => {
   e.preventDefault();
   applyAddress(addrInput.value.trim());
+});
+scanBtn.addEventListener('click', () => applyAddress(addrInput.value.trim()));
+addrInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); applyAddress(addrInput.value.trim()); }
 });
 geoBtn.addEventListener('click', () => {
   if (!navigator.geolocation) { showToast('NO GEOLOCATION SUPPORT'); return; }
