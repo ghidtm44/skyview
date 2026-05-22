@@ -90,7 +90,6 @@ body {
     rgba(0, 60, 30, 0.18) 4px
   );
   pointer-events: none;
-  mix-blend-mode: overlay;
   z-index: 50;
 }
 /* Vignette + top sheen */
@@ -971,8 +970,12 @@ function renderList() {
     return;
   }
 
+  const LIST_CAP = 80;
+  const truncated = all.length > LIST_CAP;
+  const visible = truncated ? all.slice(0, LIST_CAP) : all;
+
   const frag = document.createDocumentFragment();
-  for (const { ref: t } of all) {
+  for (const { ref: t } of visible) {
     const row = document.createElement('div');
     row.className = `tgt-row ${t.kind}` + (t.id === state.selectedId ? ' selected' : '');
     row.dataset.id = t.id;
@@ -999,6 +1002,12 @@ function renderList() {
     row.addEventListener('mouseenter', () => { state.hoverId = t.id; });
     row.addEventListener('mouseleave', () => { state.hoverId = null; });
     frag.appendChild(row);
+  }
+  if (truncated) {
+    const more = document.createElement('div');
+    more.className = 'list-empty';
+    more.textContent = `+ ${all.length - LIST_CAP} more below — sorted by elevation`;
+    frag.appendChild(more);
   }
   targetBody.replaceChildren(frag);
 }
