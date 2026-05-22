@@ -498,6 +498,7 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
         <input id="addr" type="text" placeholder='ADDRESS, CITY  ─OR─  LAT, LON  (e.g. "Times Square" or "40.71, -74.00")' spellcheck="false" />
         <button type="button" id="scan-btn">[ SCAN ]</button>
         <button type="button" class="ghost" id="geo-btn" title="Use device location">GEO</button>
+        <button type="button" class="ghost" id="share-btn" title="Copy shareable link" disabled>SHARE</button>
       </div>
       <div class="status">
         <span>TGT<b id="tgt-count">0</b></span>
@@ -558,6 +559,7 @@ const hoverInfo = document.getElementById('hover-info');
 const addrInput = document.getElementById('addr');
 const scanBtn = document.getElementById('scan-btn');
 const geoBtn = document.getElementById('geo-btn');
+const shareBtn = document.getElementById('share-btn');
 const toast = document.getElementById('toast');
 const boot = document.getElementById('boot');
 const bootLines = document.getElementById('boot-lines');
@@ -1104,6 +1106,24 @@ scanBtn.addEventListener('click', (e) => {
 addrInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); applyAddress(addrInput.value.trim()); }
 });
+shareBtn.addEventListener('click', async () => {
+  if (!state.observer) { showToast('NO LOCK TO SHARE'); return; }
+  const u = new URL(location.href);
+  u.search = '';
+  u.searchParams.set('lat', state.observer.lat.toFixed(4));
+  u.searchParams.set('lon', state.observer.lon.toFixed(4));
+  const link = u.toString();
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(link);
+      showToast('LINK COPIED TO CLIPBOARD');
+    } else {
+      prompt('COPY LINK:', link);
+    }
+  } catch {
+    prompt('COPY LINK:', link);
+  }
+});
 geoBtn.addEventListener('click', () => {
   if (!navigator.geolocation) { showToast('NO GEOLOCATION SUPPORT'); return; }
   setStatus('LOCATING');
@@ -1127,6 +1147,7 @@ function setObserver(o) {
   state.observer = o;
   obsCoord.textContent = `${Math.abs(o.lat).toFixed(3)}°${o.lat>=0?'N':'S'} ${Math.abs(o.lon).toFixed(3)}°${o.lon>=0?'E':'W'}`;
   emptyMsg.style.display = 'none';
+  shareBtn.disabled = false;
   setStatus('SCANNING');
   state.trails.clear();
   fetchPlanes().then(() => { computeSatellites(); renderList(); });
@@ -1201,8 +1222,20 @@ async function bootSequence() {
   setInterval(tickSats, 1000);
   setInterval(tickTle, 60_000);
 
+  const urlLat = parseFloat(params.get('lat'));
+  const urlLon = parseFloat(params.get('lon'));
+  const urlAddr = params.get('addr');
   const saved = localStorage.getItem('skyview.addr');
-  if (saved && !params.has('noauto')) {
+
+  if (Number.isFinite(urlLat) && Number.isFinite(urlLon)
+      && urlLat >= -90 && urlLat <= 90 && urlLon >= -180 && urlLon <= 180) {
+    const q = `${urlLat.toFixed(4)}, ${urlLon.toFixed(4)}`;
+    addrInput.value = q;
+    setTimeout(() => applyAddress(q), 200);
+  } else if (urlAddr) {
+    addrInput.value = urlAddr;
+    setTimeout(() => applyAddress(urlAddr), 200);
+  } else if (saved && !params.has('noauto')) {
     addrInput.value = saved;
     setTimeout(() => applyAddress(saved), 200);
   } else {
