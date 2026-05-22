@@ -493,12 +493,12 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
     </main>
 
     <footer>
-      <form class="input-row" id="obs-form" autocomplete="off" action="javascript:void(0);" onsubmit="return false;">
+      <div class="input-row" id="obs-form">
         <span class="prompt">&gt; SET OBSERVER:</span>
         <input id="addr" type="text" placeholder='ADDRESS, CITY  ─OR─  LAT, LON  (e.g. "Times Square" or "40.71, -74.00")' spellcheck="false" />
         <button type="button" id="scan-btn">[ SCAN ]</button>
         <button type="button" class="ghost" id="geo-btn" title="Use device location">GEO</button>
-      </form>
+      </div>
       <div class="status">
         <span>TGT<b id="tgt-count">0</b></span>
         <span>ORBITALS<b id="sat-count">0</b></span>
@@ -563,6 +563,16 @@ const toast = document.getElementById('toast');
 const boot = document.getElementById('boot');
 const bootLines = document.getElementById('boot-lines');
 const emptyMsg = document.getElementById('empty-msg');
+
+// ===== DEBUG =====
+const params = new URLSearchParams(location.search);
+const DEBUG = params.has('debug');
+if (params.has('clear')) { try { localStorage.clear(); } catch(_){} }
+const dbg = { clicks: 0, submits: 0, unloads: 0, errors: 0, last: '' };
+function dbgUpdate(k, v) { dbg[k] = (dbg[k]||0) + 1; if (v) dbg.last = v; if (DEBUG) document.title = `SV c${dbg.clicks} s${dbg.submits} u${dbg.unloads} e${dbg.errors} ${dbg.last}`; }
+window.addEventListener('beforeunload', (e) => { dbgUpdate('unloads', 'beforeunload'); });
+window.addEventListener('error', (e) => { dbgUpdate('errors', 'err:'+(e.message||'?').slice(0,30)); });
+window.addEventListener('unhandledrejection', (e) => { dbgUpdate('errors', 'rej:'+String(e.reason).slice(0,30)); });
 
 // ===== UTIL =====
 function setStatus(text, level = 'ok') {
@@ -1092,13 +1102,14 @@ async function applyAddress(query) {
     scanBtn.disabled = false;
   }
 }
-obsForm.addEventListener('submit', (e) => {
+scanBtn.addEventListener('click', (e) => {
   e.preventDefault();
+  e.stopPropagation();
+  dbgUpdate('clicks', 'scan');
   applyAddress(addrInput.value.trim());
 });
-scanBtn.addEventListener('click', () => applyAddress(addrInput.value.trim()));
 addrInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); applyAddress(addrInput.value.trim()); }
+  if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); dbgUpdate('clicks', 'enter'); applyAddress(addrInput.value.trim()); }
 });
 geoBtn.addEventListener('click', () => {
   if (!navigator.geolocation) { showToast('NO GEOLOCATION SUPPORT'); return; }
@@ -1198,9 +1209,9 @@ async function bootSequence() {
   setInterval(tickTle, 60_000);
 
   const saved = localStorage.getItem('skyview.addr');
-  if (saved) {
+  if (saved && !params.has('noauto')) {
     addrInput.value = saved;
-    applyAddress(saved);
+    setTimeout(() => applyAddress(saved), 200);
   } else {
     setStatus('AWAITING OBSERVER');
     addrInput.focus();
