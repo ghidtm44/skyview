@@ -174,10 +174,6 @@ main {
   position: relative;
   z-index: 5;
 }
-@media (max-width: 980px) {
-  main { grid-template-columns: 1fr; grid-template-rows: 1fr 220px; }
-}
-
 .radar-wrap {
   display: flex;
   align-items: center;
@@ -469,19 +465,100 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
 .credits a { color: inherit; text-decoration: none; }
 .credits a:hover { color: var(--green-dim); }
 
+/* ------ INFO PANEL (sticky, mobile-friendly) ------ */
+.info-panel {
+  position: absolute;
+  left: 12px; right: 12px;
+  bottom: 12px;
+  background: rgba(0, 20, 12, 0.96);
+  border: 1px solid var(--green-dim);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  display: none;
+  z-index: 40;
+  box-shadow: 0 0 16px var(--green-glow);
+  border-radius: 6px;
+  max-height: 60%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.info-panel.show { display: block; }
+.info-panel.plane { border-color: var(--amber); box-shadow: 0 0 16px var(--amber-glow); }
+.info-panel b {
+  color: var(--green);
+  text-shadow: 0 0 4px var(--green-glow);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.info-panel.plane b { color: var(--amber); text-shadow: 0 0 4px var(--amber-glow); }
+.info-panel .row {
+  display: flex; justify-content: space-between; gap: 16px;
+  color: var(--text-dim);
+  padding: 2px 0;
+}
+.info-panel .row span:last-child { color: var(--text); }
+.info-panel .close-x {
+  position: absolute;
+  top: 4px; right: 8px;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  line-height: 1;
+}
+.info-panel .close-x:hover { color: var(--green); }
+
 /* ------ MOBILE ------ */
 @media (max-width: 720px) {
-  body { padding: 6px; }
-  .bezel { padding: 8px; border-radius: 12px; }
+  body { padding: 4px; }
+  .bezel {
+    padding: 6px;
+    border-radius: 12px;
+    height: calc(100vh - 8px);
+    height: calc(100dvh - 8px);
+  }
   .bezel::after { display: none; }
-  header { padding: 10px 14px; flex-direction: column; gap: 6px; align-items: flex-start; font-size: 12px; }
-  .title { font-size: 24px; }
-  .title small { display: block; margin-left: 0; margin-top: 2px; }
-  main { padding: 8px; gap: 10px; grid-template-rows: 1fr 200px; }
-  footer { padding: 8px 12px; font-size: 12px; gap: 10px; }
+  header { padding: 8px 12px 6px; flex-direction: column; gap: 4px; align-items: flex-start; font-size: 11px; }
+  .title { font-size: 22px; letter-spacing: 2px; }
+  .title small { display: block; margin-left: 0; margin-top: 2px; font-size: 10px; }
+  .meta { gap: 12px; font-size: 11px; }
+  /* Stack radar on top, list collapsed below — radar gets the bulk */
+  main {
+    padding: 6px;
+    gap: 6px;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) 35vh;
+  }
+  aside.list {
+    grid-template-rows: auto 1fr;
+    max-height: 35vh;
+  }
+  .list-head { padding: 6px 10px; font-size: 10px; grid-template-columns: 18px 1fr 36px 30px 50px; gap: 6px; }
+  .tgt-row { padding: 8px 10px; grid-template-columns: 18px 1fr 36px 30px 50px; gap: 6px; font-size: 12px; min-height: 44px; }
+  .tgt-row .glyph { font-size: 16px; }
+  .tgt-row .sub { font-size: 10px; }
+  footer { padding: 6px 10px; font-size: 11px; gap: 6px; flex-direction: column; align-items: stretch; }
   .credits { display: none; }
-  .input-row { min-width: 100%; }
-  .status { font-size: 11px; gap: 10px; }
+  .input-row { min-width: 100%; gap: 6px; flex-wrap: wrap; }
+  .input-row .prompt { font-size: 11px; }
+  .input-row input[type=text] { font-size: 16px; padding: 8px 10px; flex: 1 1 100%; order: 1; }
+  .input-row .prompt { order: 0; flex-basis: 100%; }
+  .input-row button { order: 2; padding: 8px 12px; min-height: 36px; }
+  .status { font-size: 10px; gap: 8px; justify-content: space-between; }
+  /* Hide canvas hover tooltip on mobile — info panel takes over */
+  #hover-info { display: none !important; }
+  .info-panel { left: 6px; right: 6px; bottom: 6px; padding: 8px 12px; font-size: 12px; }
+}
+
+/* Slightly tighter laptop tweak */
+@media (max-width: 980px) and (min-width: 721px) {
+  main { grid-template-columns: 1fr; grid-template-rows: 1fr 220px; }
 }
 </style>
 </head>
@@ -501,9 +578,13 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
       <div class="radar-wrap">
         <canvas id="radar"></canvas>
         <div id="hover-info"></div>
+        <div class="info-panel" id="info-panel">
+          <button class="close-x" id="info-close" aria-label="Close">×</button>
+          <div id="info-content"></div>
+        </div>
         <div class="empty-msg" id="empty-msg" style="display:none;">
           ◯ ENTER OBSERVER COORDINATES BELOW ◯<br />
-          <span style="font-size:13px; opacity:0.7;">awaiting target lock</span>
+          <span style="font-size:13px; opacity:0.7;">5-mile radar · awaiting target lock</span>
         </div>
       </div>
 
@@ -530,10 +611,10 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
         <span>ORBITALS<b id="sat-count">0</b></span>
         <span>NEXT<b id="next-refresh">—</b>s</span>
         <span class="legend">
-          <span class="p">▲ AIRCRAFT</span>
+          <span class="p">▲ AIRCRAFT (5mi)</span>
           <span class="s">● ORBITAL</span>
         </span>
-        <span class="credits">DATA: airplanes.live · celestrak · openstreetmap</span>
+        <span class="credits">DATA: airplanes.live · adsbdb · celestrak · osm</span>
       </div>
     </footer>
 
@@ -554,7 +635,12 @@ const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;
 const PLANE_REFRESH_MS = 12_000;
 const TLE_REFRESH_MS = 6 * 3600 * 1000;
-const PLANE_RADIUS_NM = 250;
+// Observation radius: 5 statute miles → nautical miles for airplanes.live
+const PLANE_RADIUS_MI = 5;
+const PLANE_RADIUS_NM = PLANE_RADIUS_MI * 0.868976;
+const KM_PER_MI = 1.609344;
+const MS_PER_MPH = 0.44704;
+const FT_PER_KM = 3280.84;
 
 // ===== STATE =====
 const state = {
@@ -582,6 +668,9 @@ const tgtCount = document.getElementById('tgt-count');
 const satCount = document.getElementById('sat-count');
 const nextRefresh = document.getElementById('next-refresh');
 const hoverInfo = document.getElementById('hover-info');
+const infoPanel = document.getElementById('info-panel');
+const infoContent = document.getElementById('info-content');
+const infoClose = document.getElementById('info-close');
 const addrInput = document.getElementById('addr');
 const scanBtn = document.getElementById('scan-btn');
 const geoBtn = document.getElementById('geo-btn');
@@ -621,10 +710,24 @@ function showToast(msg, ms = 2400) {
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-function formatRange(km) {
+function formatRangeMi(km) {
   if (km == null) return '—';
-  if (km < 1000) return `${Math.round(km)}km`;
-  return `${(km/1000).toFixed(1)}Mm`;
+  const mi = km / KM_PER_MI;
+  if (mi < 10) return `${mi.toFixed(1)}mi`;
+  if (mi < 1000) return `${Math.round(mi)}mi`;
+  return `${(mi/1000).toFixed(1)}kmi`;
+}
+function ktsToMph(kts) { return kts * 1.15078; }
+function kmsToMph(kms) { return kms * 2236.94; }
+function kmToMi(km) { return km / KM_PER_MI; }
+
+// ===== HAVERSINE (great-circle ground distance, km) =====
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371.0088;
+  const dLat = (lat2 - lat1) * D2R;
+  const dLon = (lon2 - lon1) * D2R;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*D2R)*Math.cos(lat2*D2R)*Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
 }
 
 // ===== ECEF / LOOK ANGLE (proper, accounts for earth curvature) =====
@@ -687,21 +790,26 @@ async function fetchPlanes() {
   state.loadingPlanes = true;
   const { lat, lon } = state.observer;
   try {
-    const url = `https://api.airplanes.live/v2/point/${lat}/${lon}/${PLANE_RADIUS_NM}`;
+    const url = `https://api.airplanes.live/v2/point/${lat}/${lon}/${PLANE_RADIUS_NM.toFixed(2)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`AIRSPACE ${res.status}`);
     const data = await res.json();
     const ac = data.ac || data.aircraft || [];
     const out = [];
+    const RADIUS_KM = PLANE_RADIUS_MI * KM_PER_MI;
     for (const a of ac) {
       if (a.lat == null || a.lon == null) continue;
       const altFt = (typeof a.alt_baro === 'number') ? a.alt_baro
                   : (typeof a.alt_geom === 'number') ? a.alt_geom : null;
       if (altFt == null || altFt < 0) continue;
-      const altKm = altFt / 3280.84;
+      const altKm = altFt / FT_PER_KM;
       const la = lookAngles(lat, lon, 0.05, a.lat, a.lon, altKm);
       if (la.el < -1) continue; // small tolerance
+      // Hard ground-distance filter: 5-mile observation cone
+      const groundKm = haversineKm(lat, lon, a.lat, a.lon);
+      if (groundKm > RADIUS_KM) continue;
       const cs = (a.flight || a.r || a.hex || '').trim();
+      const prev = state.planes.find(x => x.id === 'p:' + a.hex);
       out.push({
         id: 'p:' + a.hex,
         kind: 'plane',
@@ -709,17 +817,22 @@ async function fetchPlanes() {
         reg: a.r || '',
         type: a.t || '',
         desc: a.desc || '',
+        operator: a.ownOp || '',
         az: la.az,
         el: la.el,
         alt_ft: altFt,
         gs: a.gs || 0,
         track: (a.track ?? a.true_heading ?? a.mag_heading ?? null),
         rangeKm: la.range,
+        groundKm,
         baro_rate: a.baro_rate || 0,
         lat: a.lat, lon: a.lon,
+        route: prev?.route, // preserve any previously-resolved route
       });
     }
     state.planes = out;
+    // Kick off route enrichment for any unresolved callsigns
+    enrichRoutes(out);
     state.lastPlaneFetch = Date.now();
     if (state.satCatalog.length) setStatus('TRACKING');
   } catch (e) {
@@ -728,6 +841,59 @@ async function fetchPlanes() {
     showToast('AIRCRAFT FEED OFFLINE — RETRY ' + Math.round(PLANE_REFRESH_MS/1000) + 's');
   } finally {
     state.loadingPlanes = false;
+  }
+}
+
+// ===== ROUTE / AIRLINE ENRICHMENT (adsbdb) =====
+const routeCache = new Map(); // callsign -> {airline, origin_iata, destination_iata, origin_name, destination_name} | null
+const routeInflight = new Set();
+
+async function fetchRoute(cs) {
+  const key = cs.trim().toUpperCase();
+  if (!key || routeCache.has(key) || routeInflight.has(key)) return;
+  routeInflight.add(key);
+  try {
+    const res = await fetch(`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(key)}`);
+    if (!res.ok) { routeCache.set(key, null); return; }
+    const j = await res.json();
+    const fr = j?.response?.flightroute;
+    if (!fr) { routeCache.set(key, null); return; }
+    routeCache.set(key, {
+      airline: fr.airline?.name || '',
+      airline_iata: fr.airline?.iata || '',
+      origin_iata: fr.origin?.iata_code || '',
+      origin_name: fr.origin?.municipality || fr.origin?.name || '',
+      destination_iata: fr.destination?.iata_code || '',
+      destination_name: fr.destination?.municipality || fr.destination?.name || '',
+    });
+  } catch {
+    routeCache.set(key, null); // negative-cache on error
+  } finally {
+    routeInflight.delete(key);
+  }
+}
+
+function enrichRoutes(planes) {
+  for (const p of planes) {
+    if (p.route !== undefined) continue;
+    const cs = (p.cs || '').trim().toUpperCase();
+    // Skip pure registration codes (no airline prefix)
+    if (!cs || cs.length < 4) { p.route = null; continue; }
+    if (routeCache.has(cs)) { p.route = routeCache.get(cs); continue; }
+    p.route = undefined; // pending
+    fetchRoute(cs).then(() => {
+      // Apply to current state when resolved
+      if (state.planes) {
+        for (const cur of state.planes) {
+          if ((cur.cs || '').trim().toUpperCase() === cs) {
+            cur.route = routeCache.get(cs);
+          }
+        }
+        // Refresh visible UI
+        renderList();
+        if (state.selectedId) updateInfoPanel();
+      }
+    });
   }
 }
 
@@ -1029,21 +1195,26 @@ function renderList() {
     const id = (t.cs || '—').slice(0, 14);
     let sub = '';
     if (t.kind === 'plane') {
-      const altPart = t.alt_ft ? `${Math.round(t.alt_ft/1000)}k` : '';
-      const spdPart = t.gs ? `${Math.round(t.gs)}kt` : '';
-      sub = [altPart, spdPart].filter(Boolean).join(' · ');
+      const altPart = t.alt_ft ? `${Math.round(t.alt_ft/1000)}k ft` : '';
+      const spdPart = t.gs ? `${Math.round(ktsToMph(t.gs))} mph` : '';
+      const route = t.route;
+      const routePart = (route && (route.origin_iata || route.destination_iata))
+        ? `${route.origin_iata || '???'}→${route.destination_iata || '???'}`
+        : '';
+      sub = [routePart, altPart, spdPart].filter(Boolean).join(' · ');
     } else {
-      sub = `${Math.round(t.alt_km)}km · ${t.vel_kms.toFixed(1)}km/s`;
+      sub = `${Math.round(kmToMi(t.alt_km))}mi · ${Math.round(kmsToMph(t.vel_kms)).toLocaleString()} mph`;
     }
     row.innerHTML =
       `<div class="glyph">${glyph}</div>` +
       `<div class="id"><b>${escapeHtml(id)}</b><br><span class="sub">${escapeHtml(sub)}</span></div>` +
       `<div class="num">${Math.round(t.az).toString().padStart(3, '0')}°</div>` +
       `<div class="num">${Math.round(t.el).toString().padStart(2, '0')}°</div>` +
-      `<div class="num">${formatRange(t.rangeKm)}</div>`;
+      `<div class="num">${formatRangeMi(t.rangeKm)}</div>`;
     row.addEventListener('click', () => {
       state.selectedId = state.selectedId === t.id ? null : t.id;
       renderList();
+      updateInfoPanel();
     });
     row.addEventListener('mouseenter', () => { state.hoverId = t.id; });
     row.addEventListener('mouseleave', () => { state.hoverId = null; });
@@ -1099,27 +1270,80 @@ canvas.addEventListener('click', () => {
   if (state.hoverId) {
     state.selectedId = state.selectedId === state.hoverId ? null : state.hoverId;
     renderList();
+    updateInfoPanel();
   }
 });
+
+// Touch: tap-to-select on mobile (no hover model on touch devices)
+canvas.addEventListener('touchstart', (e) => {
+  const touch = e.touches[0];
+  if (!touch) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = touch.clientX - rect.left;
+  const my = touch.clientY - rect.top;
+  let nearest = null;
+  let bestDist = 28; // bigger touch hit-radius
+  for (const t of [...state.planes, ...state.satellites]) {
+    if (t._x == null) continue;
+    const d = Math.hypot(t._x - mx, t._y - my);
+    if (d < bestDist) { bestDist = d; nearest = t; }
+  }
+  if (nearest) {
+    e.preventDefault();
+    state.selectedId = state.selectedId === nearest.id ? null : nearest.id;
+    renderList();
+    updateInfoPanel();
+  } else if (state.selectedId) {
+    state.selectedId = null;
+    renderList();
+    updateInfoPanel();
+  }
+}, { passive: false });
 function formatHover(t) {
   const az = Math.round(t.az), el = Math.round(t.el);
   if (t.kind === 'plane') {
-    const lines = [`<b>${escapeHtml(t.cs)}</b>`,
-      `<div class="row"><span>AZ/EL</span><span>${az}° / ${el}°</span></div>`,
-      `<div class="row"><span>ALT</span><span>${Math.round(t.alt_ft).toLocaleString()} ft</span></div>`,
-      `<div class="row"><span>SPD</span><span>${Math.round(t.gs)} kt</span></div>`];
+    const lines = [`<b>${escapeHtml(t.cs)}</b>`];
+    const r = t.route;
+    if (r && r.airline) lines.push(`<div class="row"><span>AIRLINE</span><span>${escapeHtml(r.airline)}</span></div>`);
+    else if (t.operator) lines.push(`<div class="row"><span>OPERATOR</span><span>${escapeHtml(t.operator)}</span></div>`);
+    if (r && (r.origin_iata || r.destination_iata)) {
+      lines.push(`<div class="row"><span>FROM</span><span>${escapeHtml((r.origin_iata||'???') + (r.origin_name?' '+r.origin_name:''))}</span></div>`);
+      lines.push(`<div class="row"><span>TO</span><span>${escapeHtml((r.destination_iata||'???') + (r.destination_name?' '+r.destination_name:''))}</span></div>`);
+    }
+    lines.push(`<div class="row"><span>AZ/EL</span><span>${az}° / ${el}°</span></div>`);
+    lines.push(`<div class="row"><span>ALT</span><span>${Math.round(t.alt_ft).toLocaleString()} ft</span></div>`);
+    lines.push(`<div class="row"><span>SPD</span><span>${Math.round(ktsToMph(t.gs))} mph</span></div>`);
     if (t.type) lines.push(`<div class="row"><span>TYPE</span><span>${escapeHtml(t.type)}</span></div>`);
     if (t.reg)  lines.push(`<div class="row"><span>REG</span><span>${escapeHtml(t.reg)}</span></div>`);
-    lines.push(`<div class="row"><span>RNG</span><span>${formatRange(t.rangeKm)}</span></div>`);
+    lines.push(`<div class="row"><span>RNG</span><span>${formatRangeMi(t.rangeKm)}</span></div>`);
     return lines.join('');
   } else {
     return [`<b>${escapeHtml(t.cs)}</b>`,
       `<div class="row"><span>AZ/EL</span><span>${az}° / ${el}°</span></div>`,
-      `<div class="row"><span>ALT</span><span>${Math.round(t.alt_km).toLocaleString()} km</span></div>`,
-      `<div class="row"><span>VEL</span><span>${t.vel_kms.toFixed(2)} km/s</span></div>`,
-      `<div class="row"><span>RNG</span><span>${formatRange(t.rangeKm)}</span></div>`].join('');
+      `<div class="row"><span>ALT</span><span>${Math.round(kmToMi(t.alt_km)).toLocaleString()} mi</span></div>`,
+      `<div class="row"><span>VEL</span><span>${Math.round(kmsToMph(t.vel_kms)).toLocaleString()} mph</span></div>`,
+      `<div class="row"><span>RNG</span><span>${formatRangeMi(t.rangeKm)}</span></div>`].join('');
   }
 }
+
+// ===== INFO PANEL (selection-based, mobile-friendly) =====
+function findTargetById(id) {
+  return state.planes.find(t => t.id === id) || state.satellites.find(t => t.id === id) || null;
+}
+function updateInfoPanel() {
+  if (!state.selectedId) { infoPanel.classList.remove('show'); return; }
+  const t = findTargetById(state.selectedId);
+  if (!t) { infoPanel.classList.remove('show'); return; }
+  infoPanel.classList.toggle('plane', t.kind === 'plane');
+  // formatHover output is already escapeHtml'd at every interpolation site
+  infoContent.innerHTML = formatHover(t);
+  infoPanel.classList.add('show');
+}
+infoClose.addEventListener('click', () => {
+  state.selectedId = null;
+  updateInfoPanel();
+  renderList();
+});
 
 // ===== INPUT HANDLERS =====
 async function applyAddress(query) {
@@ -1180,7 +1404,7 @@ geoBtn.addEventListener('click', () => {
   );
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { state.selectedId = null; renderList(); }
+  if (e.key === 'Escape') { state.selectedId = null; renderList(); updateInfoPanel(); }
 });
 
 function setObserver(o) {
@@ -1192,6 +1416,8 @@ function setObserver(o) {
   state.trails.clear();
   if (addrInput && typeof addrInput.blur === 'function') addrInput.blur();
   requestAnimationFrame(() => { resizeCanvas(); });
+  state.selectedId = null;
+  updateInfoPanel();
   fetchPlanes().then(() => { computeSatellites(); renderList(); });
 }
 
@@ -1210,12 +1436,13 @@ function tickClock() {
 function tickPlanes() {
   if (!state.observer) return;
   if (Date.now() - state.lastPlaneFetch >= PLANE_REFRESH_MS) {
-    fetchPlanes().then(() => renderList());
+    fetchPlanes().then(() => { renderList(); updateInfoPanel(); });
   }
 }
 function tickSats() {
   computeSatellites();
   renderList();
+  updateInfoPanel();
 }
 function tickTle() {
   if (Date.now() - state.lastTleFetch >= TLE_REFRESH_MS) {
