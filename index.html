@@ -27,25 +27,31 @@
 }
 * { box-sizing: border-box; }
 html, body {
-  height: 100%;
   margin: 0;
   background: #050505;
   color: var(--text);
   font-family: 'Share Tech Mono', ui-monospace, monospace;
-  overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
+html { min-height: 100%; }
 body {
+  min-height: 100vh;
+  min-height: 100dvh;
   background: radial-gradient(ellipse at center, #0a1410 0%, #020403 80%);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 16px;
 }
 
 /* ------ BEZEL / CRT ------ */
 .bezel {
-  width: min(1480px, 100%);
-  height: min(960px, 100%);
+  width: 100%;
+  max-width: 1480px;
+  height: calc(100vh - 32px);
+  height: calc(100dvh - 32px);
+  max-height: 960px;
+  min-height: 480px;
   border-radius: 24px;
   padding: 18px;
   background: linear-gradient(150deg, #1c1c1c 0%, #080808 100%);
@@ -54,6 +60,7 @@ body {
     inset 0 6px 24px rgba(255,255,255,0.05),
     0 30px 80px rgba(0,0,0,0.7);
   position: relative;
+  flex-shrink: 0;
 }
 .bezel::after {
   content: 'GHIDTM44 INDUSTRIES  ───  MODEL SV-2026';
