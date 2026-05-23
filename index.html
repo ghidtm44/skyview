@@ -172,10 +172,12 @@ main {
 }
 
 .radar-wrap {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   min-height: 0;
+  min-width: 0;
   background: radial-gradient(circle at center, #021410 0%, #00080a 80%);
   border: 1px solid var(--grid);
   border-radius: 8px;
@@ -183,8 +185,6 @@ main {
 }
 canvas#radar {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
   filter: drop-shadow(0 0 6px rgba(42, 253, 110, 0.35));
 }
 #hover-info {
@@ -388,6 +388,24 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
 .legend .p { color: var(--amber); }
 .legend .s { color: var(--green); }
 
+/* ------ ERROR STRIP ------ */
+.errstrip {
+  position: absolute;
+  left: 8px; right: 8px; bottom: 56px;
+  background: rgba(40, 0, 0, 0.94);
+  border: 1px solid var(--red);
+  color: #ff8888;
+  padding: 6px 10px;
+  font-size: 11px;
+  z-index: 95;
+  display: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 30vh;
+  overflow: auto;
+}
+.errstrip.show { display: block; }
+
 /* ------ TOAST ------ */
 .toast {
   position: absolute;
@@ -513,6 +531,7 @@ button.ghost:hover { background: rgba(95, 179, 126, 0.1); box-shadow: 0 0 8px rg
     </footer>
 
     <div class="toast" id="toast"></div>
+    <div class="errstrip" id="errstrip"></div>
 
     <div class="boot" id="boot">
       <pre id="boot-lines">SKYVIEW SECTOR TRACKING SYSTEM v1.0</pre>
@@ -567,6 +586,16 @@ const emptyMsg = document.getElementById('empty-msg');
 
 const params = new URLSearchParams(location.search);
 if (params.has('clear')) { try { localStorage.clear(); } catch(_){} }
+
+const errstrip = document.getElementById('errstrip');
+function showErr(label, e) {
+  const msg = (e && (e.stack || e.message)) || String(e);
+  console.error(label, e);
+  errstrip.textContent = `ERR ${label}: ${msg}`;
+  errstrip.classList.add('show');
+}
+window.addEventListener('error', (ev) => showErr('window', ev.error || ev.message));
+window.addEventListener('unhandledrejection', (ev) => showErr('promise', ev.reason));
 
 // ===== UTIL =====
 function setStatus(text, level = 'ok') {
@@ -1189,7 +1218,7 @@ function tickTle() {
 
 function rafLoop(t) {
   try { drawRadar(t); }
-  catch (e) { console.error('drawRadar error:', e); }
+  catch (e) { showErr('drawRadar', e); }
   requestAnimationFrame(rafLoop);
 }
 
